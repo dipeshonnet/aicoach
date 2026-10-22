@@ -90,6 +90,10 @@ After updating an existing installation, run `npm run db:local` locally and appl
 
 ## Cloudflare deployment
 
+The existing `ai-coach-pilot` Worker is connected directly to [dipeshonnet/aicoach](https://github.com/dipeshonnet/aicoach). Pushes to `main` trigger Cloudflare Workers Builds, using the repository root `/`, build command `npm run build`, and deploy command `npx wrangler deploy`. Deployment status and build logs are available in the Worker's Cloudflare dashboard. Production continues to use the existing D1 database, R2 bucket, and runtime secrets.
+
+The steps below describe manual deployment and initial setup. For routine updates to this pilot, push to `main` and verify that its Cloudflare build succeeds.
+
 1. Sign in with `npx wrangler login`. If browser callbacks are unavailable, use `npx wrangler login --device`.
 2. Create a dedicated D1 database and R2 bucket: `npx wrangler d1 create ai-coach-pilot` and `npx wrangler r2 bucket create ai-coach-pilot-screenshots`.
 3. Replace the local placeholder `database_id` in `wrangler.jsonc` with the returned D1 ID. Set `account_id` if your login has access to several accounts. Choose separate resource names if these names are already in use.
