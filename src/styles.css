@@ -1997,6 +1997,21 @@ td strong {
   font-size: 10px;
   margin: 17px 0 0;
 }
+.action-feedback.mismatch {
+  align-items: flex-start;
+  color: #9b342c;
+  background: #fff2ef;
+  border: 1px solid #edc5bd;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.action-feedback.mismatch > svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
 .procedure-complete {
   text-align: center;
   padding: 60px 25px;

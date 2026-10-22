@@ -268,6 +268,33 @@ describe("API routing and middleware", () => {
     expect(sqlite.prepare("SELECT COUNT(*) AS count FROM action_events").get()?.count).toBe(1);
   });
 
+  it.each(["practice", "walkthrough", "assessment"])("explains mismatched inputs in %s without advancing", async (mode) => {
+    seedConversation("chat");
+    const content = { steps: [{
+      id: "verify", hint: "Private trainer hint.",
+      hotspots: [{ id: "reference", label: "Customer reference", type: "input", correct: true, accepted: ["FSL-1048"] }],
+    }] };
+    sqlite.prepare("UPDATE scenario_versions SET content_json=? WHERE id='version'").run(JSON.stringify(content));
+    sqlite.prepare("UPDATE attempts SET mode=? WHERE id='attempt'").run(mode);
+    const send = (value: string) => request("/api/attempts/attempt/actions", {
+      method: "POST", body: JSON.stringify({ requestId: crypto.randomUUID(), stepId: "verify", hotspotId: "reference", value }),
+    }, "agent");
+    const wrong = await send("FSL-9999");
+    expect(wrong.status).toBe(200);
+    const rejected = await wrong.json() as { feedback: string };
+    expect(rejected).toMatchObject({ correct: false, currentStep: 0, complete: false });
+    expect(rejected.feedback).toContain('Value "FSL-9999" does not match "Customer reference".');
+    if (mode === "assessment") {
+      expect(rejected.feedback).not.toContain("FSL-1048");
+      expect(rejected.feedback).not.toContain("Private trainer hint");
+    } else expect(rejected.feedback).toContain('Accepted example: "FSL-1048".');
+    expect(sqlite.prepare("SELECT current_step FROM attempts WHERE id='attempt'").get()?.current_step).toBe(0);
+    const blank = await send("   ");
+    expect(await blank.json()).toMatchObject({ correct: false, currentStep: 0, feedback: 'Enter a value for "Customer reference", then submit it.' });
+    const corrected = await send("FSL-1048");
+    expect(await corrected.json()).toMatchObject({ correct: true, currentStep: 1, complete: true, feedback: "Action completed." });
+  });
+
   it.each(["chat", "voice"] as const)("replays completed %s turns and retries without another provider call", async (channel) => {
     seedConversation(channel);
     const requestId = crypto.randomUUID();

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
   Check,
@@ -35,7 +36,7 @@ export function Learning() {
     queryFn: () => api<Detail>("/attempts/" + attemptId),
   });
   const [error, setError] = useState(""),
-    [feedback, setFeedback] = useState(""),
+    [feedback, setFeedback] = useState<{ message: string; correct: boolean } | null>(null),
     [hint, setHint] = useState(false),
     [busy, setBusy] = useState(false),
     [text, setText] = useState(""),
@@ -81,6 +82,7 @@ export function Learning() {
       actionRequest.current = { key, id: id() };
     setBusy(true);
     setError("");
+    setFeedback(null);
     try {
       const result = await post<{ correct: boolean; feedback?: string }>(
         "/attempts/" + attemptId + "/actions",
@@ -92,7 +94,10 @@ export function Learning() {
         },
       );
       actionRequest.current = null;
-      setFeedback(result.feedback || "Action recorded.");
+      setFeedback({
+        correct: result.correct,
+        message: result.feedback || (result.correct ? "Action completed." : "Your entry or action does not match. Check it and try again."),
+      });
       setHint(false);
       await refresh();
     } catch (e) {
@@ -474,6 +479,15 @@ export function Learning() {
                 disabled={busy || recording}
                 onAction={action}
               />
+              {feedback && (
+                <div
+                  className={"action-feedback" + (feedback.correct ? "" : " mismatch")}
+                  role={feedback.correct ? "status" : "alert"}
+                >
+                  {feedback.correct ? <Check size={16} /> : <AlertCircle size={16} />}
+                  <span>{feedback.message}</span>
+                </div>
+              )}
               {!assessment && (
                 <div className="practice-tools">
                   <button className="text-link" onClick={() => setHint(!hint)}>
@@ -495,12 +509,6 @@ export function Learning() {
                   {step.hint ||
                     "Review the step instructions and the highlighted areas in walkthrough mode."}
                 </Notice>
-              )}
-              {feedback && (
-                <div className="action-feedback">
-                  <Check size={15} />
-                  {feedback}
-                </div>
               )}
             </>
           ) : (

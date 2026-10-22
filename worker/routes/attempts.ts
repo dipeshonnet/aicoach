@@ -170,18 +170,28 @@ attemptsRoutes.post("/attempts/:id/actions", async (c) => {
     const next = completedStep(s, attempt.current_step, [...events, event])
       ? attempt.current_step + 1
       : attempt.current_step;
+    const hotspot = checked.hotspot;
+    let feedback = "Action completed.";
+    if (!checked.correct) {
+      if (hotspot?.type === "input" && !input.value?.trim()) {
+        feedback = `Enter a value for "${hotspot.label}", then submit it.`;
+      } else if (hotspot?.type === "input" && hotspot.correct) {
+        feedback = `Value ${JSON.stringify(input.value || "")} does not match "${hotspot.label}".`;
+        const example = hotspot.accepted.find((answer) => answer.trim());
+        feedback += attempt.mode !== "assessment" && example
+          ? ` Accepted example: ${JSON.stringify(example)}.`
+          : " Check your entry and try again.";
+      } else {
+        feedback = "That action does not match the required action for this screen.";
+        if (attempt.mode !== "assessment")
+          feedback += " " + (s.steps[attempt.current_step].hint || "Review the instructions and try again.");
+      }
+    }
     const response = {
       correct: checked.correct,
       currentStep: next,
       complete: next >= s.steps.length,
-      ...(attempt.mode !== "assessment"
-        ? {
-            feedback: checked.correct
-              ? "Action completed."
-              : s.steps[attempt.current_step].hint ||
-                "Review the instructions and try again.",
-          }
-        : {}),
+      feedback,
     };
     await c.env.DB.batch([
       c.env.DB.prepare(
