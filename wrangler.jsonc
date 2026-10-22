@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ai-coach-pilot",
+  "account_id": "68f7d76f0db9c20630b0b4b97505f5d0",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist/client",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ai-coach-pilot",
+      "database_id": "ca24f8a5-9d02-44b5-a4fe-566cc0dcfec9",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "r2_buckets": [
+    { "binding": "SCREENSHOTS", "bucket_name": "ai-coach-pilot-screenshots" },
+  ],
+  "vars": {
+    "APP_URL": "https://ai-coach-pilot.dipeshonnet.workers.dev",
+    "GROQ_TEXT_MODEL": "openai/gpt-oss-120b",
+    "GROQ_STT_MODEL": "whisper-large-v3-turbo",
+    "GROQ_TTS_MODEL": "canopylabs/orpheus-v1-english",
+    "GROQ_TTS_VOICE": "troy",
+  },
+  "observability": { "enabled": true },
+}

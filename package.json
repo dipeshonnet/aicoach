@@ -1,0 +1,46 @@
+{
+  "name": "ai-coach",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "db:local": "wrangler d1 migrations apply ai-coach-pilot --local",
+    "db:remote": "wrangler d1 migrations apply ai-coach-pilot --remote",
+    "deploy": "npm run build && wrangler deploy",
+    "setup:local": "node scripts/setup-local.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:ai": "node scripts/ai-smoke.mjs"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.104.2",
+    "better-auth": "^1.7.7",
+    "docx": "^9.11.0",
+    "groq-sdk": "^1.6.0",
+    "hono": "^4.13.13",
+    "lucide-react": "^1.55.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.63.1",
+    "@cloudflare/workers-types": "^5.20261013.1",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "jszip": "^3.10.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4",
+    "wrangler": "^4.149.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

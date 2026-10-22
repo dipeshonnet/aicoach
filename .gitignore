@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.npm-cache/
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.env*
+!.env.example
+output/
+outputs/
+v2/
+.playwright-cli/
+*.log
+.local-*.json
+.pilot-*.json
+*.tsbuildinfo

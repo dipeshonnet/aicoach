@@ -1,0 +1,4 @@
+BETTER_AUTH_SECRET=generate-a-random-secret-at-least-32-characters
+BOOTSTRAP_TOKEN=generate-a-separate-random-secret-at-least-32-characters
+GROQ_API_KEY=
+APP_URL=http://127.0.0.1:5173
