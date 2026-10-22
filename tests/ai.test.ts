@@ -53,4 +53,26 @@ describe("customer conversation role", () => {
     expect(messages[4]).toEqual({ role: "system", content: expect.stringContaining("Do not switch to the support agent role") });
     expect(messages).toHaveLength(6);
   });
+
+  it("rewrites an order-ownership mistake before returning the reply", async () => {
+    create.mockResolvedValueOnce({ choices: [{ message: { content: "The order number for your purchase is BR-7024." } }] });
+    create.mockResolvedValueOnce({ choices: [{ message: { content: "My order number is BR-7024." } }] });
+    const reply = await customerReply({ GROQ_API_KEY: "test" } as Env, customerScenario, [], "What is your order number?", 0, "practice");
+    expect(reply).toBe("My order number is BR-7024.");
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not return a reply that still assigns the customer's order to the learner", async () => {
+    create.mockResolvedValue({ choices: [{ message: { content: "Your order is BR-7024." } }] });
+    await expect(customerReply({ GROQ_API_KEY: "test" } as Env, customerScenario, [], "Order number?", 0, "practice"))
+      .rejects.toThrow("The customer reply could not stay in character");
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it("allows customer questions about the company's order policies", async () => {
+    create.mockResolvedValue({ choices: [{ message: { content: "What is your order policy for late deliveries?" } }] });
+    expect(await customerReply({ GROQ_API_KEY: "test" } as Env, customerScenario, [], "Can I help?", 0, "practice"))
+      .toBe("What is your order policy for late deliveries?");
+    expect(create).toHaveBeenCalledTimes(1);
+  });
 });

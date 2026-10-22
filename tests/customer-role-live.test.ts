@@ -24,11 +24,16 @@ it.skipIf(process.env.RUN_LIVE_CUSTOMER_ROLE !== "1")("keeps Ava as the customer
     steps: [],
   } as unknown as ScenarioContent;
   const turns: Turn[] = [];
-  for (const text of ["yes, tell me your details please", "What is your customer reference?", "Please confirm your email or phone number."]) {
+  for (const text of ["yes, tell me your details please", "What is your customer reference?", "Please confirm your email or phone number.", "What is your order number?"]) {
     const reply = await customerReply(env, scenario, turns, text, 0, "practice");
     expect(reply).not.toMatch(/may i have|could you (?:please )?(?:provide|confirm|share)|so i can verify|i (?:can|will|have) (?:process|check|look up)/i);
     if (!turns.length) expect(reply).toContain("Ava");
     if (turns.length === 1) expect(reply).toMatch(/FSL[-\u2010-\u2015]1048/);
+    expect(reply).not.toMatch(/\byour\s+(?:order|purchase)\b/i);
+    if (turns.length === 3) {
+      expect(reply).toMatch(/BR[-\u2010-\u2015]7024/);
+      expect(reply).toMatch(/\bmy\b/i);
+    }
     turns.push({ id: String(turns.length), request_id: String(turns.length), sequence: turns.length + 1, agent_text: text, customer_text: reply, state: "completed", created_at: Date.now() });
   }
   turns[0].customer_text = "May I please have your full name and email address so I can verify your identity?";
@@ -36,4 +41,9 @@ it.skipIf(process.env.RUN_LIVE_CUSTOMER_ROLE !== "1")("keeps Ava as the customer
   expect(recovered).toContain("Ava");
   expect(recovered).toMatch(/FSL[-\u2010-\u2015]1048/);
   expect(recovered).not.toMatch(/may i have|so i can verify/i);
+  turns[0].customer_text = "The order number for your purchase is BR-7024.";
+  const orderReply = await customerReply(env, scenario, turns.slice(0, 1), "Please confirm the order number again.", 0, "practice");
+  expect(orderReply).toMatch(/BR[-\u2010-\u2015]7024/);
+  expect(orderReply).toMatch(/\bmy\b/i);
+  expect(orderReply).not.toMatch(/\byour\s+(?:order|purchase)\b/i);
 }, 120000);
