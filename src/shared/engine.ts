@@ -43,7 +43,13 @@ export function sanitizeScenario(
   };
 }
 export const normalizeAnswer = (value: string) =>
-  value.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase("en");
+  value
+    .normalize("NFKC")
+    // Copied references can contain typographic hyphens from customer replies.
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("en");
 export function validateAction(
   s: ScenarioContent,
   stepIndex: number,

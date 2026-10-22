@@ -249,6 +249,25 @@ describe("API routing and middleware", () => {
       .run(channel);
   }
 
+  it.each(["FSL-1048", "FSL\u20111048", "FSL\u20131048"])("advances the customer search for reference %s", async (value) => {
+    seedConversation("chat");
+    const content = { steps: [{
+      id: "verify", hint: "Check the customer reference.",
+      hotspots: [{ id: "reference", type: "input", correct: true, accepted: ["FSL-1048"] }],
+    }, { id: "order", hotspots: [] }] };
+    sqlite.prepare("UPDATE scenario_versions SET content_json=? WHERE id='version'").run(JSON.stringify(content));
+    const requestId = crypto.randomUUID();
+    const body = JSON.stringify({ requestId, stepId: "verify", hotspotId: "reference", value });
+    const response = await request("/api/attempts/attempt/actions", { method: "POST", body }, "agent");
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ correct: true, currentStep: 1, complete: false });
+    expect(sqlite.prepare("SELECT current_step FROM attempts WHERE id='attempt'").get()?.current_step).toBe(1);
+    // A retried submission must not skip another screen.
+    const replay = await request("/api/attempts/attempt/actions", { method: "POST", body }, "agent");
+    expect(await replay.json()).toMatchObject({ correct: true, currentStep: 1 });
+    expect(sqlite.prepare("SELECT COUNT(*) AS count FROM action_events").get()?.count).toBe(1);
+  });
+
   it.each(["chat", "voice"] as const)("replays completed %s turns and retries without another provider call", async (channel) => {
     seedConversation(channel);
     const requestId = crypto.randomUUID();
