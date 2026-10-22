@@ -2,9 +2,13 @@
 
 A shared training pilot for front-office and back-office BPO teams. Trainers turn screenshots into interactive procedures, agents practise with an AI customer, and trainers approve assessment completion.
 
+[Launch the live app](https://ai-coach-pilot.dipeshonnet.workers.dev/) · [GitHub repository](https://github.com/dipeshonnet/aicoach)
+
 ## Live pilot
 
-[Open AI Coach](https://ai-coach-pilot.dipeshonnet.workers.dev). The initial administrator login is saved privately in `.pilot-admin.json`; change its password in Account settings after signing in. This ignored file contains credentials and must stay private. Initial setup is complete, and the bootstrap secret has been removed.
+The production app is hosted at [ai-coach-pilot.dipeshonnet.workers.dev](https://ai-coach-pilot.dipeshonnet.workers.dev/). Cloudflare Workers Builds is connected to this repository and deploys updates pushed to `main` to this URL.
+
+The initial administrator login is saved privately in `.pilot-admin.json`; change its password in Account settings after signing in. This ignored file contains credentials and must stay private. Initial setup is complete, and the bootstrap secret has been removed.
 
 The hosted pilot was verified with real Groq chat and turn-based voice assessments, private screenshot retrieval, trainer approval, and persisted completion across all required channels. Synthetic verification accounts and attempts are retained as examples.
 
@@ -93,6 +97,8 @@ After updating an existing installation, run `npm run db:local` locally and appl
 The existing `ai-coach-pilot` Worker is connected directly to [dipeshonnet/aicoach](https://github.com/dipeshonnet/aicoach). Pushes to `main` trigger Cloudflare Workers Builds, using the repository root `/`, build command `npm run build`, and deploy command `npx wrangler deploy`. Deployment status and build logs are available in the Worker's Cloudflare dashboard. Production continues to use the existing D1 database, R2 bucket, and runtime secrets.
 
 The steps below describe manual deployment and initial setup. For routine updates to this pilot, push to `main` and verify that its Cloudflare build succeeds.
+
+To check automatic deployments, open [AI Coach deployments in Cloudflare](https://dash.cloudflare.com/68f7d76f0db9c20630b0b4b97505f5d0/workers/services/view/ai-coach-pilot/production/deployments). Confirm the latest commit is ready and serving production traffic before treating an update as live. If pushes do not start builds, check **Settings → Builds**: the Git repository should be `dipeshonnet/aicoach`, the production branch should be `main`, and **Disable builds** should be off.
 
 1. Sign in with `npx wrangler login`. If browser callbacks are unavailable, use `npx wrangler login --device`.
 2. Create a dedicated D1 database and R2 bucket: `npx wrangler d1 create ai-coach-pilot` and `npx wrangler r2 bucket create ai-coach-pilot-screenshots`.
