@@ -1,8 +1,19 @@
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
-import { customerReply } from "../worker/ai";
+import { customerReply, evaluate } from "../worker/ai";
 import type { Env } from "../worker/env";
-import type { ScenarioContent, Turn } from "../src/shared/types";
+import type { ActionEvent, ScenarioContent, Turn } from "../src/shared/types";
+
+function liveEnv() {
+  return Object.fromEntries(
+    readFileSync(".dev.vars", "utf8").split(/\r?\n/)
+      .filter((line) => line.includes("=") && !line.trim().startsWith("#"))
+      .map((line) => {
+        const index = line.indexOf("=");
+        return [line.slice(0, index).trim(), line.slice(index + 1).trim().replace(/^['"]|['"]$/g, "")];
+      }),
+  ) as unknown as Env;
+}
 
 // Explicitly opt in: this uses the configured provider and consumes API quota.
 it.skipIf(process.env.RUN_LIVE_CUSTOMER_ROLE !== "1")("keeps Ava as the customer across live replies and recovers from role drift", async () => {
@@ -47,3 +58,35 @@ it.skipIf(process.env.RUN_LIVE_CUSTOMER_ROLE !== "1")("keeps Ava as the customer
   expect(orderReply).toMatch(/\bmy\b/i);
   expect(orderReply).not.toMatch(/\byour\s+(?:order|purchase)\b/i);
 }, 120000);
+
+it.skipIf(process.env.RUN_LIVE_CUSTOMER_ROLE !== "1")("leaves policy mistakes to scoring instead of customer corrections", async () => {
+  const env = liveEnv();
+  const scenario = {
+    office: "front", customerName: "Ava Morgan",
+    brief: "Resolve a delayed order after verifying the customer.",
+    reference: "Customer Ava Morgan, reference FSL-1048, order BR-7024, value USD 49.00. Verify identity first, then process a full USD 49.00 refund. You must advise 3–5 business days for the credit. Never promise immediate credit.",
+    outcome: "Customer verified, full refund processed, and 3–5 business day timeframe communicated.",
+    persona: "Cooperative customer seeking a refund.", opening: "My order has not arrived. Can you help?",
+    rubric: ["procedure", "resolution", "compliance", "communication"].map((key) => ({ key, label: key, weight: 1, guidance: "" })),
+    steps: [{ id: "refund", critical: true, hotspots: [{ id: "process", type: "click", correct: true }] }],
+  } as unknown as ScenarioContent;
+  const events: ActionEvent[] = [{ id: "refund-event", request_id: "refund-request", step_id: "refund", hotspot_id: "process", correct: 1, critical: 0, value: null, created_at: 1 }];
+  const initial: Turn = { id: "identity", request_id: "identity-request", sequence: 1, agent_text: "Please confirm your name and customer reference before I access the order.", customer_text: "My name is Ava Morgan and my reference is FSL-1048.", state: "completed", created_at: 1 };
+  const wrong = "I have processed your full USD 49.00 refund. You should get it in 7–10 days.";
+  const reply = await customerReply(env, scenario, [initial], wrong, 1, "assessment");
+  expect(reply).not.toMatch(/3\s*[-–‑]\s*5|three\s*(?:to|through|[-–])\s*five|correct (?:the )?timeframe|verify (?:my|the) identity/i);
+  const finalTurn = (text: string): Turn => ({ id: "resolution", request_id: "resolution-request", sequence: 2, agent_text: text, customer_text: reply, state: "completed", created_at: 2 });
+  const good = await evaluate(env, scenario, events, [initial, finalTurn("Thank you, your identity is verified. I have processed your full USD 49.00 refund. Please allow 3–5 business days for the credit. Is there anything else I can help with?")], "chat");
+  const bad = await evaluate(env, scenario, events, [initial, finalTurn("Thank you, your identity is verified. " + wrong)], "chat");
+  for (const key of ["resolution", "compliance"]) {
+    const goodScore = good.criteria.find((c) => c.key === key)!.score;
+    const criterion = bad.criteria.find((c) => c.key === key)!;
+    expect(criterion.score).toBeLessThan(goodScore);
+    expect(criterion.score).toBeLessThan(100);
+    expect(criterion.evidenceIds).toContain("resolution");
+  }
+  expect(JSON.stringify(bad.improvements)).toMatch(/timeframe|business days|3.*5/i);
+  const omitted = await evaluate(env, scenario, events, [initial, finalTurn("Thank you, your identity is verified. I have processed your full USD 49.00 refund. Goodbye.")], "chat");
+  expect(omitted.criteria.find((c) => c.key === "resolution")!.score).toBeLessThan(good.criteria.find((c) => c.key === "resolution")!.score);
+  expect(omitted.criteria.find((c) => c.key === "compliance")!.score).toBeLessThan(100);
+}, 180000);
