@@ -2,11 +2,13 @@
 
 A shared training pilot for front-office and back-office BPO teams. Trainers turn screenshots into interactive procedures, agents practise with an AI customer, and trainers approve assessment completion.
 
-[Launch the live app](https://ai-coach-pilot.dipeshonnet.workers.dev/) · [GitHub repository](https://github.com/dipeshonnet/aicoach)
+[Launch the live app](https://coach.everydayai.work/) · [GitHub repository](https://github.com/dipeshonnet/aicoach)
 
 ## Live pilot
 
-The production app is hosted at [ai-coach-pilot.dipeshonnet.workers.dev](https://ai-coach-pilot.dipeshonnet.workers.dev/). Cloudflare Workers Builds is connected to this repository and deploys updates pushed to `main` to this URL.
+The production app is hosted at [coach.everydayai.work](https://coach.everydayai.work/). Cloudflare Workers Builds is connected to this repository and deploys updates pushed to `main` to this URL.
+
+The custom domain is managed by the `routes` entry in `wrangler.jsonc`. The original `https://ai-coach-pilot.dipeshonnet.workers.dev` address remains enabled as an authenticated alias. Sessions are separate on each hostname.
 
 The initial administrator login is saved privately in `.pilot-admin.json`; change its password in Account settings after signing in. This ignored file contains credentials and must stay private. Initial setup is complete, and the bootstrap secret has been removed.
 

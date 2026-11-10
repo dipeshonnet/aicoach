@@ -7,6 +7,7 @@ export interface Env {
   BETTER_AUTH_SECRET: string;
   BOOTSTRAP_TOKEN?: string;
   APP_URL?: string;
+  APP_URL_ALIASES?: string;
   GROQ_API_KEY?: string;
   GROQ_TEXT_MODEL?: string;
   GROQ_STT_MODEL?: string;

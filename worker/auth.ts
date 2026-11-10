@@ -3,6 +3,7 @@ import { admin } from "better-auth/plugins";
 import { adminAc, userAc } from "better-auth/plugins/admin/access";
 import { scrypt, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Env } from "./env";
+import { appOrigins } from "./origins";
 
 // Use Workers' native crypto rather than spending the isolate's CPU on JS scrypt.
 async function derive(password: string, salt: string): Promise<Buffer> {
@@ -22,8 +23,8 @@ export function authFor(env: Env, origin: string) {
   return betterAuth({
     database: env.DB,
     secret: env.BETTER_AUTH_SECRET,
-    baseURL: env.APP_URL || origin,
-    trustedOrigins: [env.APP_URL || origin],
+    baseURL: appOrigins(env, origin).includes(origin) ? origin : env.APP_URL || origin,
+    trustedOrigins: appOrigins(env, origin),
     emailAndPassword: {
       enabled: true,
       disableSignUp: true,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-const base = "https://ai-coach-pilot.dipeshonnet.workers.dev";
+const base = process.env.APP_URL || "https://coach.everydayai.work";
 const read = (name) =>
   JSON.parse(readFileSync(new URL("../" + name, import.meta.url), "utf8"));
 async function session(credentials) {

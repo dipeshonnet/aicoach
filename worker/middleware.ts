@@ -6,6 +6,7 @@ import { now, one, uid } from "./store";
 import type { User } from "../src/shared/types";
 import type { ErrorHandler, MiddlewareHandler } from "hono";
 import { originOf } from "./http";
+import { appOrigins } from "./origins";
 
 export const apiMiddleware: MiddlewareHandler<AppEnv> = async (c, next) => {
   const started = now();
@@ -44,10 +45,10 @@ export const apiMiddleware: MiddlewareHandler<AppEnv> = async (c, next) => {
     c.req.raw = new Request(c.req.raw, { body: bytes });
   }
   const origin = c.req.header("Origin"),
-    site = c.env.APP_URL || originOf(c.req.raw);
+    sites = appOrigins(c.env, originOf(c.req.raw));
   if (
     !["GET", "HEAD", "OPTIONS"].includes(c.req.method) &&
-    ((origin && origin !== site) ||
+    ((origin && !sites.includes(origin)) ||
       c.req.header("Sec-Fetch-Site") === "cross-site")
   )
     throw new HTTPException(403, {

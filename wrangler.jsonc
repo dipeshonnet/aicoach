@@ -3,6 +3,8 @@
   "name": "ai-coach-pilot",
   "account_id": "68f7d76f0db9c20630b0b4b97505f5d0",
   "main": "worker/index.ts",
+  "workers_dev": true,
+  "routes": [{ "pattern": "coach.everydayai.work", "custom_domain": true }],
   "compatibility_date": "2026-10-13",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
@@ -22,7 +24,8 @@
     { "binding": "SCREENSHOTS", "bucket_name": "ai-coach-pilot-screenshots" },
   ],
   "vars": {
-    "APP_URL": "https://ai-coach-pilot.dipeshonnet.workers.dev",
+    "APP_URL": "https://coach.everydayai.work",
+    "APP_URL_ALIASES": "https://ai-coach-pilot.dipeshonnet.workers.dev",
     "GROQ_TEXT_MODEL": "openai/gpt-oss-120b",
     "GROQ_STT_MODEL": "whisper-large-v3-turbo",
     "GROQ_TTS_MODEL": "canopylabs/orpheus-v1-english",

@@ -208,6 +208,21 @@ describe("API routing and middleware", () => {
     expect((await request("/api/attempts/missing", {}, "agent")).status).toBe(404);
   });
 
+  it("accepts configured domain aliases and rejects unrelated origins", async () => {
+    env.APP_URL = "https://coach.everydayai.work";
+    env.APP_URL_ALIASES = "https://ai-coach-pilot.dipeshonnet.workers.dev";
+    for (const origin of [env.APP_URL, env.APP_URL_ALIASES]) {
+      const response = await request("/api/auth/sign-in/email", {
+        method: "POST", headers: { Origin: origin }, body: "{}",
+      });
+      expect(response.status).toBe(200);
+    }
+    const rejected = await request("/api/auth/sign-in/email", {
+      method: "POST", headers: { Origin: "https://other.example" }, body: "{}",
+    });
+    expect(rejected.status).toBe(403);
+  });
+
   it("checks origin and streamed body size before dispatch", async () => {
     const crossSite = await request("/api/setup", {
       method: "POST", headers: { Origin: "https://other.example" }, body: "{}",
